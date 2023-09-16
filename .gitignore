@@ -20,7 +20,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+geckodriver.log
+tempData/*
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
