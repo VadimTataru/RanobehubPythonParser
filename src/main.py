@@ -5,16 +5,13 @@ from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
-from selenium.webdriver.remote.webelement import WebElement
 
 ranobe_url = 'https://ranobehub.org/ranobe'
-test_output = "testOutput.html"
 source_page = "sourcePage.html"
 
 # Путь до текущего файла
 file_dir = os.path.dirname(os.path.realpath('__file__'))
-temp_data_dir = 'tempData/'
-
+temp_data_dir = '../tempData/'
 
 def write_in_file(file_name: str, mode: str, data):
     file_name = os.path.join(file_dir, temp_data_dir + file_name)
@@ -23,42 +20,40 @@ def write_in_file(file_name: str, mode: str, data):
         file.write(data + "\n")
         file.close()
 
-
-def get_source_htlm(url: str):
-    write_in_file(test_output, "w", str(datetime.datetime.now()))
-    driver = wd.Firefox()
-    driver.maximize_window()
-
+def get_source_html(url):
+    options = wd.FirefoxOptions()
+    options.add_argument("-headless")
+    driver = wd.Firefox(options)
+    driver.set_window_size(1920, 1080)
     try:
-        driver.get(url=url)
+        driver.get(ranobe_url)
         time.sleep(3)
-        pages = driver.find_elements(By.CLASS_NAME, "page-item")
-        # По сути тут надо цикл начать по pages, а лучше по другому параметру, но я пока не придумал
-        # action = ActionChains(driver)
-        # action.click(pages[3]).perform()
-        # time.sleep(10)
-
-        write_in_file(source_page, "w", driver.page_source)
-
-        source_page_file = os.path.join(file_dir, temp_data_dir + source_page)
-        source_page_file = os.path.abspath(os.path.realpath(source_page_file))
-        write_in_file(test_output, "a+", source_page_file)
-
-        with open(source_page_file, "r", encoding='utf-8') as file:
-            soup = BeautifulSoup(file.read(), 'html.parser')
-            ranobe = soup.find_all('a', {'class': 'eight wide mobile five wide tablet four wide computer column'})
-            for r in ranobe:
-                write_in_file(test_output, "a+", str(r))
-
+        button_load_more = driver.find_element(By.CLASS_NAME, 'text')
+        ActionChains(driver).move_to_element(button_load_more).click().perform()
+        while True:
+            last_height = driver.execute_script("return document.body.scrollHeight")
+            # Прокрутка вниз
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Пауза, пока загрузится страница.
+            time.sleep(2)
+            # Вычисляем новую высоту прокрутки и сравниваем с последней высотой прокрутки.
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                write_in_file(source_page, "w", driver.page_source)
+                source_page_file = os.path.join(file_dir, temp_data_dir + source_page)
+                os.path.abspath(os.path.realpath(source_page_file))
+                print("Прокрутка завершена")
+                break
+            last_height = new_height
+            print("Появился новый контент, прокручиваем дальше")
     except Exception as ex:
         print(ex)
     finally:
-        write_in_file(test_output, "a+", str(datetime.datetime.now()))
         driver.close()
         driver.quit()
 
-
 def main():
+    get_source_html(ranobe_url)
     source_page_file = os.path.join(file_dir, temp_data_dir + source_page)
     source_page_file = os.path.abspath(os.path.realpath(source_page_file))
     with open(source_page_file, "r", encoding='utf-8') as file:
@@ -68,10 +63,9 @@ def main():
         for r in ranobe:
             if r:
                 items.append(str(r))
+                print(r)
 
         print(str(len(items)))
-    #get_source_htlm(ranobe_url)
-
 
 if __name__ == '__main__':
     main()
