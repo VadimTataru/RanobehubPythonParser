@@ -50,3 +50,6 @@ MANIFEST
 .idea/
 .idea
 
+#HtmlPages
+src/
+
