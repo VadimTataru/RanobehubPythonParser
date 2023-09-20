@@ -21,7 +21,7 @@ ENV/
 env.bak/
 venv.bak/
 geckodriver.log
-tempData/*
+tempData/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
@@ -49,4 +49,7 @@ MANIFEST
 #JetBrains IDE
 .idea/
 .idea
+
+#HtmlPages
+src/
 
