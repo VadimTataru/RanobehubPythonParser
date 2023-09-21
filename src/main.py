@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from bs4 import BeautifulSoup
@@ -12,7 +13,7 @@ novel_list_file_name = "novel_list.txt"
 
 # Путь до текущего файла
 file_dir = os.path.dirname(os.path.realpath('__file__'))
-temp_data_dir = '../tempData/'
+temp_data_dir = 'tempData/'
 
 
 def write_in_file(file_name: str, mode: str, data):
@@ -56,7 +57,7 @@ def get_source_html(url):
 
 
 def main():
-    get_source_html(ranobe_url)
+    #get_source_html(ranobe_url)
     source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     source_page_file = os.path.abspath(os.path.realpath(source_page_file))
     novel_list_file = os.path.join(file_dir, temp_data_dir + novel_list_file_name)
@@ -71,18 +72,13 @@ def main():
                                         title_en=ranobe.find('div', class_='header').find('h5').find('a').text.strip(),
                                         source_link=ranobe.find('a', class_='image')['href'],
                                         img_link=ranobe.find('img', class_='poster_grid')['data-src']))
-    with open(novel_list_file, "w", encoding='utf-8'):
-        for index, novel in enumerate(novel_list):
-            with open(novel_list_file, "a", encoding='utf-8') as file:
-                file.write(novel.title_rus + "\n")
-                file.write(novel.title_en + "\n")
-                file.write(novel.source_link + "\n")
-                file.write(novel.img_link + "\n")
-                file.close()
-            # print(f"Позиция {index + 1} {novel.title_rus}")
-            # print(f"Позиция {index + 1} {novel.title_en}")
-            # print(f"Позиция {index + 1} {novel.source_link}")
-            # print(f"Позиция {index + 1} {novel.img_link}")
+    print(len(ranobe_div))
+    with open(novel_list_file, "w+", encoding='utf-8') as file:
+        file.write('[' + '\n')
+        for novel in novel_list:
+            file.write(json.dumps(novel.__dict__, indent=4, ensure_ascii=False))
+            file.write(', \n')
+        file.write(']')
 
 
 if __name__ == '__main__':
