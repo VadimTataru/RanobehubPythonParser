@@ -95,16 +95,37 @@ def get_first_chapter_link(novel_url: str):
                                  '#app-desktop-tabs > div > div.contents-volumes > div:nth-child(1) > '
                                  'div.content.active > div:nth-child(1) > div:nth-child(1) > '
                                  'div:nth-child(1) > div > a').get_property('href'))
-        #     ranobe_file_name = novel_id[0] + '_' + str(i) + file_format
-        #     write_in_file(ranobe_file_name, 'w', driver.page_source)
-        #     chapters_file_name = 'chapters_' + ranobe_file_name
-        #     with open(ranobe_file_name, 'r', encoding='utf-8') as file:
-        #         soup = BeautifulSoup(file.read(), 'html.parser')
-        #         chapters_div = soup.find_all('div', class_='contents-chapter contents-chapter_full')
-        #         for x in chapters_div:
-        #             print(x)
-        #
-        # print('Done!')
+    except Exception as ex:
+        print(ex.args)
+        print(ex.__cause__)
+        print(ex.__doc__)
+        print(ex)
+    finally:
+        driver.close()
+        driver.quit()
+
+
+def get_novel_chapter(chapter_link: str):
+    options = wd.FirefoxOptions()
+    options.add_argument("-headless")
+    driver = wd.Firefox(options)
+    driver.set_window_size(1920, 1080)
+
+    try:
+        driver.get(chapter_link)
+        time.sleep(2)
+        main_container = driver.find_element(By.CLASS_NAME, 'container_main')
+        title_div_web_elem = main_container.find_element(By.CLASS_NAME, 'title-wrapper')
+        # Элементы с нужной информацией
+        volume_web_elem = main_container.find_element(By.XPATH, '/html/body/div[2]/div[4]/ol/li[3]/a/span')
+        title_web_elem = title_div_web_elem.find_element(By.TAG_NAME, 'h1')
+        paragraph_web_elems = title_div_web_elem.find_element(By.XPATH, './..').find_elements(By.TAG_NAME, 'p')
+        button_web_elems = driver.find_elements(By.CLASS_NAME, 'read_nav__buttons__manage')
+        right_button_elem = button_web_elems[0]
+        for item in button_web_elems:
+            if item.get_attribute('data-hotKey') == 'right':
+                right_button_elem = item
+        print(main_container)
     except Exception as ex:
         print(ex.args)
         print(ex.__cause__)
@@ -116,8 +137,11 @@ def get_first_chapter_link(novel_url: str):
 
 
 def main():
-    url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
-    get_first_chapter_link(novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem')
+    # url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
+    # first_chapter_link = get_first_chapter_link(
+    #     novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
+    # )
+    get_novel_chapter('https://ranobehub.org/ranobe/965/1/1')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
