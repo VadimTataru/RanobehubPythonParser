@@ -12,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
 
 from Novel import Novel
+from src.NovelChapter import NovelChapter
 
 ranobe_url = 'https://ranobehub.org/ranobe'
 source_page_file_name = "sourcePage.html"
@@ -73,7 +74,6 @@ def get_first_chapter_link(novel_url: str):
     # options.add_argument("-headless")
     driver = wd.Firefox(options)
     driver.set_window_size(1920, 1080)
-    novel_id = re.search(r'(?<=ranobe/)\d+', novel_url)
     try:
         driver.get(novel_url)
         time.sleep(3)
@@ -110,7 +110,7 @@ def get_novel_chapter(chapter_link: str):
     options.add_argument("-headless")
     driver = wd.Firefox(options)
     driver.set_window_size(1920, 1080)
-
+    novel_id = int(re.search(r'(?<=ranobe/)\d+', chapter_link).group())
     try:
         driver.get(chapter_link)
         time.sleep(2)
@@ -121,11 +121,18 @@ def get_novel_chapter(chapter_link: str):
         title_web_elem = title_div_web_elem.find_element(By.TAG_NAME, 'h1')
         paragraph_web_elems = title_div_web_elem.find_element(By.XPATH, './..').find_elements(By.TAG_NAME, 'p')
         button_web_elems = driver.find_elements(By.CLASS_NAME, 'read_nav__buttons__manage')
-        right_button_elem = button_web_elems[0]
+        next_chapter_link = ""
         for item in button_web_elems:
             if item.get_attribute('data-hotKey') == 'right':
-                right_button_elem = item
-        print(main_container)
+                next_chapter_link = item.get_attribute('href')
+        return NovelChapter(
+            title_rus=title_web_elem.text,
+            source_link=chapter_link,
+            next_source_link=next_chapter_link,
+            content="",
+            volume=volume_web_elem.text,
+            novel_id=novel_id
+        )
     except Exception as ex:
         print(ex.args)
         print(ex.__cause__)
@@ -141,7 +148,7 @@ def main():
     # first_chapter_link = get_first_chapter_link(
     #     novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
     # )
-    get_novel_chapter('https://ranobehub.org/ranobe/965/1/1')
+    chapter = get_novel_chapter('https://ranobehub.org/ranobe/965/1/1')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
