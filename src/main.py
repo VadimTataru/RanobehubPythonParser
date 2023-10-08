@@ -10,14 +10,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriver, AbstractEventListener
 
 from Novel import Novel
-
-
-class EventListener(AbstractEventListener):
-    print('Text!')
-
 
 ranobe_url = 'https://ranobehub.org/ranobe'
 source_page_file_name = "sourcePage.html"
@@ -68,15 +62,20 @@ def get_source_html(url):
         driver.quit()
 
 
-def get_single_ranobe_source_html(url: str, file_format: str = '.html'):
+def get_first_chapter_link(novel_url: str):
+    """Поиск ссылки на первую главу новеллы
+    Note: Запускается WebDriver Firefox без опции -headless!
+    _______
+    :param novel_url Ссылка на новеллу
+    :returns Ссылка на первую главу новеллы"""
+
     options = wd.FirefoxOptions()
     # options.add_argument("-headless")
     driver = wd.Firefox(options)
     driver.set_window_size(1920, 1080)
-    novel_id = re.search(r'(?<=ranobe/)\d+', url)
-    event_firing_web_driver = EventFiringWebDriver(driver, EventListener())
+    novel_id = re.search(r'(?<=ranobe/)\d+', novel_url)
     try:
-        driver.get(url)
+        driver.get(novel_url)
         time.sleep(3)
         expander_btn: Optional[WebElement]
         try:
@@ -87,29 +86,15 @@ def get_single_ranobe_source_html(url: str, file_format: str = '.html'):
         if expander_btn is not None:
             ActionChains(driver).move_to_element(expander_btn).click().perform()
 
-        volumes = driver.find_elements(By.CLASS_NAME, 'contents-volume')
-        ActionChains(driver).scroll_by_amount(0, volumes[0].location['y']).perform()
-        prev = ""
-        for i, x in enumerate(volumes):
-            chapter_selector = "#app-desktop-tabs > div > div.contents-volumes > " \
-                               "div:nth-child({0}) > div.content.active > div:nth-child(1)".format(i+1)
-            print("document.querySelector('{0}').scrollDown += 70".format(chapter_selector))
-            ActionChains(driver).move_to_element(x).click().perform()
-            time.sleep(2)
-            while True:
-                inner_html = x.get_attribute("innerHtml")
-                with open("chapter_list.txt", "a", encoding="utf-8") as file:
-                    file.write(x.get_attribute("innerHTML"))
-                time.sleep(5)
-                event_firing_web_driver.execute_script(
-                    "document.querySelector('{0}').scrollTop += 1000".format(chapter_selector)
-                )
-                # TODO(Доработать условие выхода из цикла)
-                if prev == inner_html:
-                    break
-                else:
-                    prev = inner_html
-            time.sleep(10)
+        first_vol = driver.find_element(By.CLASS_NAME, 'contents-volume')
+        ActionChains(driver).scroll_by_amount(0, first_vol.location['y']).perform()
+        ActionChains(driver).move_to_element(first_vol).click().perform()
+        time.sleep(2)
+        return str(first_vol \
+                   .find_element(By.CSS_SELECTOR,
+                                 '#app-desktop-tabs > div > div.contents-volumes > div:nth-child(1) > '
+                                 'div.content.active > div:nth-child(1) > div:nth-child(1) > '
+                                 'div:nth-child(1) > div > a').get_property('href'))
         #     ranobe_file_name = novel_id[0] + '_' + str(i) + file_format
         #     write_in_file(ranobe_file_name, 'w', driver.page_source)
         #     chapters_file_name = 'chapters_' + ranobe_file_name
@@ -131,9 +116,8 @@ def get_single_ranobe_source_html(url: str, file_format: str = '.html'):
 
 
 def main():
-
     url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
-    get_single_ranobe_source_html(url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem')
+    get_first_chapter_link(novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
