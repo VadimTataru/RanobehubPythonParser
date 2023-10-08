@@ -9,6 +9,7 @@ from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
 from Novel import Novel
@@ -105,11 +106,7 @@ def get_first_chapter_link(novel_url: str):
         driver.quit()
 
 
-def get_novel_chapter(chapter_link: str):
-    options = wd.FirefoxOptions()
-    options.add_argument("-headless")
-    driver = wd.Firefox(options)
-    driver.set_window_size(1920, 1080)
+def get_novel_chapter(chapter_link: str, driver: WebDriver):
     novel_id = int(re.search(r'(?<=ranobe/)\d+', chapter_link).group())
     try:
         driver.get(chapter_link)
@@ -129,7 +126,7 @@ def get_novel_chapter(chapter_link: str):
             title_rus=title_web_elem.text,
             source_link=chapter_link,
             next_source_link=next_chapter_link,
-            content="",
+            content="", #TODO(Заполнить контент)
             volume=volume_web_elem.text,
             novel_id=novel_id
         )
@@ -143,12 +140,43 @@ def get_novel_chapter(chapter_link: str):
         driver.quit()
 
 
+def get_all_next_chapters(chapter_link: str, driver: WebDriver):
+    url = chapter_link
+    novel_chapters: list[NovelChapter] = []
+    while True:
+        chapter = get_novel_chapter(url, driver)
+        with open('chapters.txt', 'a', encoding='utf-8') as file:
+            file.write(chapter.to_str() + '\n')
+        novel_chapters.append(chapter)
+        if chapter.next_source_link == "":
+            return novel_chapters
+        else:
+            url = chapter.next_source_link
+
+
+def write_list_as_json(data: [], file_name: str):
+    with open(file_name, "w+", encoding='utf-8') as file:
+        file.write('[' + '\n')
+        for item in data:
+            file.write(json.dumps(item.__dict__, indent=4, ensure_ascii=False))
+            file.write(', \n')
+        file.write(']')
+
+
 def main():
     # url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
     # first_chapter_link = get_first_chapter_link(
     #     novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
     # )
-    chapter = get_novel_chapter('https://ranobehub.org/ranobe/965/1/1')
+    options = wd.FirefoxOptions()
+    options.add_argument("-headless")
+    driver = wd.Firefox(options)
+    driver.set_window_size(1920, 1080)
+    url = 'https://ranobehub.org/ranobe/965/9/87'
+    url2 = 'https://ranobehub.org/ranobe/965/1/1'
+    chapters = get_all_next_chapters(url, driver)
+    print(len(chapters))
+    write_list_as_json(chapters, 'chapters.txt')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
