@@ -129,11 +129,12 @@ def get_novel_chapter(chapter_link: str, driver: WebDriver):
         next_chapter_link = ""
         text_content = ""
         for item in paragraph_web_elems:
-            text_content = item.text + "\n"
+            text_content += item.text + "\n"
 
         for item in button_web_elems:
             if item.get_attribute('data-hotKey') == 'right':
                 next_chapter_link = item.get_attribute('href')
+
         return NovelChapter(
             title_rus=title_web_elem.text,
             source_link=chapter_link,
@@ -162,12 +163,19 @@ def get_all_next_chapters(chapter_link: str, driver: WebDriver, should_write: bo
 
     url = chapter_link
     novel_chapters: list[NovelChapter] = []
+    process_index = 0
     try:
         while True:
+            print(str(process_index) + " step is done.")
+
             chapter = get_novel_chapter(url, driver)
             if should_write:
                 write_as_json(chapter, file_name)
             novel_chapters.append(chapter)
+
+            print(str(process_index) + " step is done.")
+            process_index += 1
+
             if chapter.next_source_link == "":
                 return novel_chapters
             else:
@@ -196,12 +204,12 @@ def write_list_as_json(data: [], file_name: str):
         file.write(']')
 
 
-def write_as_json(data: object, file_name: str):
+def write_as_json(data, file_name: str):
     """ Запись объекта данных в файл в формате json.
             Arguments:
             \n data: Объект данных на запись.\n
             \n file_name: Имя файла.\n """
-    with open(file_name, "w+", encoding='utf-8') as file:
+    with open(file_name, "a+", encoding='utf-8') as file:
         file.write(json.dumps(data.__dict__, indent=4, ensure_ascii=False))
         file.write(',\n')
 
@@ -217,9 +225,9 @@ def main():
     driver.set_window_size(1920, 1080)
     url = 'https://ranobehub.org/ranobe/965/9/87'
     url2 = 'https://ranobehub.org/ranobe/965/1/1'
-    chapters = get_all_next_chapters(url, driver)
+    chapters = get_all_next_chapters(url2, driver, True, 'chapters.txt')
     print(len(chapters))
-    write_list_as_json(chapters, 'chapters.txt')
+    # write_list_as_json(chapters, 'chapters.txt')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
     # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
