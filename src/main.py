@@ -65,12 +65,12 @@ def get_source_html(url):
 
 
 def get_first_chapter_link_with_selenium(novel_url: str):
-    """ Поиск ссылки на первую главу новеллы. Работает с ознакомительной страницы.
-    \n Note: Запускается WebDriver Firefox без опции -headless! \n
-    Arguments:
-    \n novel_url: Ссылка на новеллу.\n
-    Returns:
-    \n returns: Ссылка на первую главу новеллы.\n"""
+    """Поиск ссылки на первую главу новеллы с использованием Selenium. Работает с ознакомительной страницы.
+    \n Запускается WebDriver Firefox без опции -headless! \n
+
+    :param novel_url: Ссылка на новеллу.
+    :return: Ссылка на первую главу новеллы.
+    """
 
     driver = wd.Firefox()
     driver.set_window_size(1920, 1080)
@@ -121,7 +121,7 @@ def get_first_chapter_link(url: str):
 
 def get_novel_chapter(chapter_link: str, driver: WebDriver):
     """Парсинг главы новеллы.
-    \n Note: В WebDriver следует включать опцию -headless! \n
+    \n В WebDriver следует включать опцию -headless! \n
 
     :param chapter_link: Ссылка на страницу чтения главы новеллы.
     :param driver: WebDriver.
@@ -166,15 +166,15 @@ def get_novel_chapter(chapter_link: str, driver: WebDriver):
 
 def get_all_next_chapters(chapter_link: str, driver: WebDriver, should_write: bool = False,
                           file_name: str = "chapters.txt"):
-    """ Парсинг всех глав, начиная с chapter_link.
-        \n Note: В WebDriver следует включать опцию -headless! \n
-        Arguments:
-        \n chapter_link: Ссылка на новеллу.\n
-        \n driver: WebDriver.\n
-        \n should_write: Записывать в файл сразу или просто вернуть массив данных.\n
-        \n file_name: Имя файла для записи.\n
-        Returns:
-        \n returns: Массив глав новеллы.\n """
+    """Парсинг всех глав, начиная с chapter_link.
+        \n В WebDriver следует включать опцию -headless! \n
+
+    :param chapter_link: Ссылка на новеллу.
+    :param driver: WebDriver.
+    :param should_write: Записывать в файл сразу или просто вернуть массив данных.
+    :param file_name: Имя файла для записи.
+    :return: Массив глав новеллы.
+    """
 
     url = chapter_link
     novel_chapters: list[NovelChapter] = []
@@ -206,10 +206,11 @@ def get_all_next_chapters(chapter_link: str, driver: WebDriver, should_write: bo
 
 
 def write_list_as_json(data: [], file_name: str):
-    """ Запись массива данных в файл в формате json.
-        Arguments:
-        \n data: Массив данных на запись.\n
-        \n file_name: Имя файла.\n """
+    """Запись массива данных в файл в формате json.
+
+    :param data: Массив данных на запись.
+    :param file_name: Имя файла.
+    """
 
     with open(file_name, "w+", encoding='utf-8') as file:
         file.write('[' + '\n')
@@ -220,10 +221,11 @@ def write_list_as_json(data: [], file_name: str):
 
 
 def write_as_json(data, file_name: str):
-    """ Запись объекта данных в файл в формате json.
-            Arguments:
-            \n data: Объект данных на запись.\n
-            \n file_name: Имя файла.\n """
+    """Запись объекта данных в формате json.
+
+    :param data: Объект данных на запись.
+    :param file_name: Имя файла.
+    """
     with open(file_name, "a+", encoding='utf-8') as file:
         file.write(json.dumps(data.__dict__, indent=4, ensure_ascii=False))
         file.write(',\n')
