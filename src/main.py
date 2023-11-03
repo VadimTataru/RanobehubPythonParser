@@ -64,7 +64,7 @@ def get_source_html(url):
         driver.quit()
 
 
-def get_first_chapter_link(novel_url: str):
+def get_first_chapter_link_with_selenium(novel_url: str):
     """ Поиск ссылки на первую главу новеллы. Работает с ознакомительной страницы.
     \n Note: Запускается WebDriver Firefox без опции -headless! \n
     Arguments:
@@ -105,16 +105,30 @@ def get_first_chapter_link(novel_url: str):
         driver.quit()
 
 
-def get_novel_chapter(chapter_link: str, driver: WebDriver):
-    """ Парсинг главы новеллы.
-        \n Note: В WebDriver следует включать опцию -headless! \n
-        Arguments:
-        \n chapter_link: Ссылка на страницу чтения главы новеллы.\n
-        \n driver: WebDriver.\n
-        Returns:
-        \n returns: NovelChapter.\n"""
+def get_first_chapter_link(url: str):
+    """Преобразование ссылки новелы в ссылку на её первую главу.
 
-    novel_id = int(re.search(r'(?<=ranobe/)\d+', chapter_link).group())
+    :param url: Ссылка на новелу.
+    :return: Ссылка на первую главу новелы по шаблону.
+    """
+    match = re.match(r'(https://ranobehub.org/ranobe/\d+)', url)
+    if match:
+        chapter_url = match.group(1)
+        return chapter_url + '/1/1'
+    else:
+        return ''
+
+
+def get_novel_chapter(chapter_link: str, driver: WebDriver):
+    """Парсинг главы новеллы.
+    \n Note: В WebDriver следует включать опцию -headless! \n
+
+    :param chapter_link: Ссылка на страницу чтения главы новеллы.
+    :param driver: WebDriver.
+    :return: NovelChapter.
+    """
+
+    novel_id = int(re.search(r'(\w+?<=ranobe/)\d+', chapter_link).group())
     try:
         driver.get(chapter_link)
         time.sleep(2)
@@ -150,7 +164,8 @@ def get_novel_chapter(chapter_link: str, driver: WebDriver):
         print(ex)
 
 
-def get_all_next_chapters(chapter_link: str, driver: WebDriver, should_write: bool = False, file_name: str = "chapters.txt"):
+def get_all_next_chapters(chapter_link: str, driver: WebDriver, should_write: bool = False,
+                          file_name: str = "chapters.txt"):
     """ Парсинг всех глав, начиная с chapter_link.
         \n Note: В WebDriver следует включать опцию -headless! \n
         Arguments:
@@ -215,18 +230,19 @@ def write_as_json(data, file_name: str):
 
 
 def main():
-    # url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
+    url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
+    value = get_first_chapter_link(url)
+    print(value)
     # first_chapter_link = get_first_chapter_link(
     #     novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
     # )
-    options = wd.ChromeOptions()
-    options.add_argument("-headless")
-    driver = wd.Chrome(options)
-    driver.set_window_size(1920, 1080)
-    url = 'https://ranobehub.org/ranobe/965/9/87'
-    url2 = 'https://ranobehub.org/ranobe/965/1/1'
-    chapters = get_all_next_chapters(url2, driver, True, 'chapters.txt')
-    print(len(chapters))
+    # options = wd.ChromeOptions()
+    # options.add_argument("-headless")
+    # driver = wd.Chrome(options)
+    # driver.set_window_size(1920, 1080)
+    # url2 = 'https://ranobehub.org/ranobe/965/1/1'
+    # chapters = get_all_next_chapters(url2, driver, True, 'chapters.txt')
+    # print(len(chapters))
     # write_list_as_json(chapters, 'chapters.txt')
     # get_source_html(ranobe_url)
     # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
