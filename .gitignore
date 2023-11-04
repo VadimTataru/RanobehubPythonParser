@@ -49,7 +49,3 @@ MANIFEST
 #JetBrains IDE
 .idea/
 .idea
-
-#HtmlPages
-src/
-
