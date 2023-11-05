@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from selenium import webdriver as wd
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 
@@ -21,7 +20,7 @@ novel_list_file_name = "novel_list.txt"
 
 # Путь до текущего файла
 file_dir = os.path.dirname(os.path.realpath('__file__'))
-temp_data_dir = 'tempData/'
+temp_data_dir = '../tempData/'
 
 
 def write_in_file(file_name: str, mode: str, data):
@@ -32,13 +31,19 @@ def write_in_file(file_name: str, mode: str, data):
         file.close()
 
 
-def get_source_html(url):
+def get_source_html(url: str):
+    """Запись всех страниц с источника url в файл с именем source_page_file_name
+        \n В WebDriver следует включать опцию -headless! \n
+
+    :param url: Ссылка на страницу со всеми новеллами.
+    """
+
     options = wd.FirefoxOptions()
     options.add_argument("-headless")
     driver = wd.Firefox(options)
     driver.set_window_size(1920, 1080)
     try:
-        driver.get(ranobe_url)
+        driver.get(url)
         time.sleep(3)
         button_load_more = driver.find_element(By.CLASS_NAME, 'text')
         ActionChains(driver).move_to_element(button_load_more).click().perform()
@@ -57,6 +62,41 @@ def get_source_html(url):
                 print("Прокрутка завершена.")
                 break
             print("Появился новый контент, прокручиваем дальше.")
+    except Exception as ex:
+        print(ex)
+    finally:
+        driver.close()
+        driver.quit()
+
+
+def get_novel_list(should_write: bool = False):
+    """Парсинг всех новелл и запись в отдельный файл с именем novel_list_file_name.
+        \n В WebDriver следует включать опцию -headless! \n
+    """
+    try:
+        options = wd.ChromeOptions()
+        options.add_argument("-headless")
+        driver = wd.Chrome(options)
+        driver.set_window_size(1920, 1080)
+        source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
+        source_page_file = os.path.abspath(os.path.realpath(source_page_file))
+        novel_list_file = os.path.join(file_dir, temp_data_dir + novel_list_file_name)
+        novel_list_file = os.path.abspath(os.path.realpath(novel_list_file))
+
+        with open(source_page_file, "r", encoding='utf-8') as file:
+            soup = BeautifulSoup(file.read(), 'html.parser')
+            ranobe_div = soup.find_all("div", class_="eight wide mobile five wide tablet four wide computer column")
+            novel_list: list[Novel] = []
+            for ranobe in ranobe_div:
+                if ranobe:
+                    novel_list.append(
+                        Novel(title_rus=ranobe.find('div', class_='header').find('h4').find('a').text.strip(),
+                              title_en=ranobe.find('div', class_='header').find('h5').find('a').text.strip(),
+                              source_link=ranobe.find('a', class_='image')['href'],
+                              img_link=ranobe.find('img', class_='poster_grid')['data-src']))
+        if should_write:
+            write_list_as_json(novel_list, novel_list_file)
+        return novel_list
     except Exception as ex:
         print(ex)
     finally:
@@ -90,7 +130,7 @@ def get_first_chapter_link_with_selenium(novel_url: str):
         ActionChains(driver).scroll_by_amount(0, first_vol.location['y']).perform()
         ActionChains(driver).move_to_element(first_vol).click().perform()
         time.sleep(2)
-        return str(first_vol \
+        return str(first_vol
                    .find_element(By.CSS_SELECTOR,
                                  '#app-desktop-tabs > div > div.contents-volumes > div:nth-child(1) > '
                                  'div.content.active > div:nth-child(1) > div:nth-child(1) > '
@@ -226,48 +266,15 @@ def write_as_json(data, file_name: str):
     :param data: Объект данных на запись.
     :param file_name: Имя файла.
     """
+
     with open(file_name, "a+", encoding='utf-8') as file:
         file.write(json.dumps(data.__dict__, indent=4, ensure_ascii=False))
         file.write(',\n')
 
 
 def main():
-    url = 'https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
-    value = get_first_chapter_link(url)
-    print(value)
-    # first_chapter_link = get_first_chapter_link(
-    #     novel_url='https://ranobehub.org/ranobe/965-my-dungeon-life-rise-of-the-slave-harem'
-    # )
-    # options = wd.ChromeOptions()
-    # options.add_argument("-headless")
-    # driver = wd.Chrome(options)
-    # driver.set_window_size(1920, 1080)
-    # url2 = 'https://ranobehub.org/ranobe/965/1/1'
-    # chapters = get_all_next_chapters(url2, driver, True, 'chapters.txt')
-    # print(len(chapters))
-    # write_list_as_json(chapters, 'chapters.txt')
-    # get_source_html(ranobe_url)
-    # source_page_file = os.path.join(file_dir, temp_data_dir + source_page_file_name)
-    # source_page_file = os.path.abspath(os.path.realpath(source_page_file))
-    # novel_list_file = os.path.join(file_dir, temp_data_dir + novel_list_file_name)
-    # novel_list_file = os.path.abspath(os.path.realpath(novel_list_file))
-    # with open(source_page_file, "r", encoding='utf-8') as file:
-    #     soup = BeautifulSoup(file.read(), 'html.parser')
-    #     ranobe_div = soup.find_all("div", class_="eight wide mobile five wide tablet four wide computer column")
-    #     novel_list: list[Novel] = []
-    #     for ranobe in ranobe_div:
-    #         if ranobe:
-    #             novel_list.append(Novel(title_rus=ranobe.find('div', class_='header').find('h4').find('a').text.strip(),
-    #                                     title_en=ranobe.find('div', class_='header').find('h5').find('a').text.strip(),
-    #                                     source_link=ranobe.find('a', class_='image')['href'],
-    #                                     img_link=ranobe.find('img', class_='poster_grid')['data-src']))
-    # print(len(ranobe_div))
-    # with open(novel_list_file, "w+", encoding='utf-8') as file:
-    #     file.write('[' + '\n')
-    #     for novel in novel_list:
-    #         file.write(json.dumps(novel.__dict__, indent=4, ensure_ascii=False))
-    #         file.write(', \n')
-    #     file.write(']')
+    get_source_html(ranobe_url)  # сохраняем html со всеми новеллами
+    novel_list = get_novel_list(True)  # сохраняем нужные данные с html в отдельный файл
 
 
 if __name__ == '__main__':
